@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+
+{% block title %}Daily Progress{% endblock %}
+
+{% block content %}
+<div class="progress-page">
+    <div class="page-header">
+        <h2>Daily Progress</h2>
+        <p class="page-subtitle">{{ date.strftime('%A, %B %d, %Y') }}</p>
+    </div>
+    
+    <div class="stats-card">
+        <h3>Today's Summary</h3>
+        <div class="stats-row">
+            <div class="stat-item">
+                <span class="stat-label">Total Tasks</span>
+                <span class="stat-value">{{ stats.total }}</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Completed</span>
+                <span class="stat-value">{{ stats.completed }}</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">On Time</span>
+                <span class="stat-value">{{ stats.on_time }}</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Overdue</span>
+                <span class="stat-value">{{ stats.overdue }}</span>
+            </div>
+        </div>
+        <div class="progress-bar-large">
+            <div class="progress-fill" style="width: {{ stats.completion_rate }}%"></div>
+            <span class="progress-text">{{ stats.completion_rate }}% Complete</span>
+        </div>
+    </div>
+    
+    {% if tasks %}
+    <div class="tasks-section">
+        <h3>Tasks Due Today</h3>
+        <div class="tasks-container">
+            {% for task in tasks %}
+                <div class="task-card" data-task-id="{{ task.id }}">
+                    <div class="task-card-header">
+                        <a href="{{ url_for('tasks.detail', task_id=task.id) }}" class="task-card-title">
+                            {{ task.title }}
+                        </a>
+                        <span class="task-priority priority-{{ task.priority }}">{{ task.priority }}</span>
+                    </div>
+                    
+                    {% if task.description %}
+                        <p class="task-card-description">{{ task.description[:100] }}{% if task.description|length > 100 %}...{% endif %}</p>
+                    {% endif %}
+                    
+                    <div class="task-card-footer">
+                        <div class="task-card-meta">
+                            <span class="task-status status-{{ task.status }}">{{ task.status|replace('_', ' ')|title }}</span>
+                            <span class="task-time">{{ task.time_remaining() }}</span>
+                        </div>
+                        
+                        <div class="task-card-actions">
+                            {% if not task.is_completed() %}
+                                <button class="btn-icon btn-complete" onclick="completeTask({{ task.id }})" title="Complete">✓</button>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% else %}
+        <div class="empty-state-large">
+            <p>No tasks due today! 🎉</p>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

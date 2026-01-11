@@ -1,0 +1,153 @@
+{% extends "base.html" %}
+
+{% block title %}Create Task{% endblock %}
+
+{% block content %}
+<div class="form-page">
+    <div class="form-container">
+        <h2>Create New Task</h2>
+        
+        <form method="POST" class="task-form">
+            {{ form.hidden_tag() }}
+            
+            <div class="form-group">
+                {{ form.title.label(class="form-label") }}
+                {{ form.title(class="form-input", id="taskTitle", placeholder="e.g., Write project proposal", autocomplete="off") }}
+                <div class="task-suggestions" id="taskSuggestions"></div>
+                {% if form.title.errors %}
+                    <span class="form-error">{{ form.title.errors[0] }}</span>
+                {% endif %}
+            </div>
+            
+            <div class="form-group">
+                {{ form.description.label(class="form-label") }}
+                {{ form.description(class="form-textarea", rows="4", placeholder="Optional: Add more details about this task") }}
+                {% if form.description.errors %}
+                    <span class="form-error">{{ form.description.errors[0] }}</span>
+                {% endif %}
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    {{ form.window_type.label(class="form-label") }}
+                    {{ form.window_type(class="form-select", onchange="toggleCustomDays()") }}
+                    {% if form.window_type.errors %}
+                        <span class="form-error">{{ form.window_type.errors[0] }}</span>
+                    {% endif %}
+                </div>
+                
+                <div class="form-group" id="custom-days-group" style="display:none;">
+                    {{ form.window_value.label(class="form-label") }}
+                    {{ form.window_value(class="form-input", placeholder="e.g., 3") }}
+                    {% if form.window_value.errors %}
+                        <span class="form-error">{{ form.window_value.errors[0] }}</span>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    {{ form.priority.label(class="form-label") }}
+                    {{ form.priority(class="form-select") }}
+                </div>
+                
+                <div class="form-group">
+                    {{ form.tags.label(class="form-label") }}
+                    {{ form.tags(class="form-input", placeholder="e.g., work, urgent, review") }}
+                </div>
+            </div>
+            
+            <div class="form-actions">
+                {{ form.submit(class="btn btn-primary") }}
+                <a href="{{ url_for('tasks.list_tasks') }}" class="btn btn-secondary">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+// Task suggestions with emojis
+const taskSuggestions = [
+    { emoji: '📚', text: 'Read a book', category: 'Learning' },
+    { emoji: '💼', text: 'Prepare presentation', category: 'Work' },
+    { emoji: '📝', text: 'Write report', category: 'Work' },
+    { emoji: '💻', text: 'Code review', category: 'Work' },
+    { emoji: '📧', text: 'Reply to emails', category: 'Communication' },
+    { emoji: '🏋️', text: 'Workout session', category: 'Health' },
+    { emoji: '🛒', text: 'Grocery shopping', category: 'Personal' },
+    { emoji: '📞', text: 'Call client', category: 'Work' },
+    { emoji: '🎨', text: 'Design mockup', category: 'Creative' },
+    { emoji: '📊', text: 'Analyze data', category: 'Work' },
+    { emoji: '🔍', text: 'Research topic', category: 'Learning' },
+    { emoji: '✍️', text: 'Write article', category: 'Content' },
+    { emoji: '🎯', text: 'Set goals', category: 'Planning' },
+    { emoji: '🧹', text: 'Clean workspace', category: 'Personal' },
+    { emoji: '📱', text: 'Social media post', category: 'Marketing' },
+    { emoji: '🎓', text: 'Study for exam', category: 'Learning' },
+    { emoji: '🍳', text: 'Meal prep', category: 'Health' },
+    { emoji: '🚗', text: 'Car maintenance', category: 'Personal' },
+    { emoji: '💰', text: 'Review budget', category: 'Finance' },
+    { emoji: '👥', text: 'Team meeting', category: 'Work' }
+];
+
+const taskInput = document.getElementById('taskTitle');
+const suggestionsDiv = document.getElementById('taskSuggestions');
+
+taskInput.addEventListener('input', function() {
+    const value = this.value.toLowerCase();
+    suggestionsDiv.innerHTML = '';
+    
+    if (value.length < 2) {
+        suggestionsDiv.style.display = 'none';
+        return;
+    }
+    
+    const matches = taskSuggestions.filter(item => 
+        item.text.toLowerCase().includes(value) || 
+        item.category.toLowerCase().includes(value)
+    ).slice(0, 6);
+    
+    if (matches.length > 0) {
+        matches.forEach(item => {
+            const div = document.createElement('div');
+            div.className = 'suggestion-item';
+            div.innerHTML = `
+                <span class="suggestion-emoji">${item.emoji}</span>
+                <div class="suggestion-content">
+                    <span class="suggestion-text">${item.text}</span>
+                    <span class="suggestion-category">${item.category}</span>
+                </div>
+            `;
+            div.onclick = function() {
+                taskInput.value = item.emoji + ' ' + item.text;
+                suggestionsDiv.style.display = 'none';
+            };
+            suggestionsDiv.appendChild(div);
+        });
+        suggestionsDiv.style.display = 'block';
+    } else {
+        suggestionsDiv.style.display = 'none';
+    }
+});
+
+// Close suggestions when clicking outside
+document.addEventListener('click', function(e) {
+    if (!taskInput.contains(e.target) && !suggestionsDiv.contains(e.target)) {
+        suggestionsDiv.style.display = 'none';
+    }
+});
+
+function toggleCustomDays() {
+    const windowType = document.querySelector('select[name="window_type"]').value;
+    const customDaysGroup = document.getElementById('custom-days-group');
+    if (windowType === 'custom') {
+        customDaysGroup.style.display = 'block';
+    } else {
+        customDaysGroup.style.display = 'none';
+    }
+}
+
+// Initialize on page load
+document.addEventListener('DOMContentLoaded', toggleCustomDays);
+</script>
+{% endblock %}

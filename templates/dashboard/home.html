@@ -1,0 +1,125 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="dashboard">
+    <div class="dashboard-header">
+        <h2>Dashboard</h2>
+        <a href="{{ url_for('tasks.create') }}" class="btn-new-task">
+            <span class="btn-new-task-icon">✨</span>
+            <span class="btn-new-task-text">Create New Task</span>
+        </a>
+    </div>
+    
+    <!-- Task Summary -->
+    <div class="task-summary">
+        <div class="summary-card">
+            <div class="summary-icon icon-active">📋</div>
+            <div class="summary-content">
+                <h4>Active</h4>
+                <p class="summary-count">{{ active_count }}</p>
+            </div>
+        </div>
+        
+        <div class="summary-card">
+            <div class="summary-icon icon-at-risk">⚠️</div>
+            <div class="summary-content">
+                <h4>At Risk</h4>
+                <p class="summary-count">{{ at_risk_count }}</p>
+            </div>
+        </div>
+        
+        <div class="summary-card">
+            <div class="summary-icon icon-overdue">❌</div>
+            <div class="summary-content">
+                <h4>Overdue</h4>
+                <p class="summary-count">{{ overdue_count }}</p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Progress Overview -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <h3>📅 Today</h3>
+            <div class="progress-bar">
+                <div class="progress-fill" style="width: {{ today_stats.completion_rate }}%"></div>
+            </div>
+            <p class="stat-text">{{ today_stats.completion_rate }}% Complete ({{ today_stats.completed }}/{{ today_stats.total }})</p>
+        </div>
+        
+        <div class="stat-card">
+            <h3>📆 This Week</h3>
+            <div class="progress-bar">
+                <div class="progress-fill" style="width: {{ week_stats.completion_rate }}%"></div>
+            </div>
+            <p class="stat-text">{{ week_stats.completion_rate }}% Complete ({{ week_stats.completed }}/{{ week_stats.total }})</p>
+        </div>
+        
+        <div class="stat-card">
+            <h3>🗓️ This Month</h3>
+            <div class="progress-bar">
+                <div class="progress-fill" style="width: {{ month_stats.completion_rate }}%"></div>
+            </div>
+            <p class="stat-text">{{ month_stats.completion_rate }}% Complete ({{ month_stats.completed }}/{{ month_stats.total }})</p>
+        </div>
+    </div>
+    
+    <!-- Two Column Layout -->
+    <div class="dashboard-grid">
+        <!-- Upcoming Tasks -->
+        <div class="dashboard-section">
+            <div class="section-header">
+                <h3>🎯 Upcoming Tasks</h3>
+                <a href="{{ url_for('tasks.list_tasks') }}" class="btn-link">View All</a>
+            </div>
+            
+            {% if upcoming_tasks %}
+                <ul class="task-list">
+                    {% for task in upcoming_tasks %}
+                        <li class="task-item" data-task-id="{{ task.id }}">
+                            <div class="task-content">
+                                <a href="{{ url_for('tasks.detail', task_id=task.id) }}" class="task-title">{{ task.title }}</a>
+                                <div class="task-meta">
+                                    <span class="task-status status-{{ task.status }}">{{ task.status|replace('_', ' ')|title }}</span>
+                                    <span class="task-time">⏱️ {{ task.time_remaining() }}</span>
+                                </div>
+                            </div>
+                            <button class="btn-icon btn-complete" onclick="completeTask({{ task.id }})" title="Mark as complete">✓</button>
+                        </li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <p class="empty-state">🎉 No upcoming tasks. Great job!</p>
+            {% endif %}
+        </div>
+        
+        <!-- Recent Completions -->
+        <div class="dashboard-section">
+            <div class="section-header">
+                <h3>🏆 Recently Completed</h3>
+            </div>
+            
+            {% if recent_completed %}
+                <ul class="task-list">
+                    {% for task in recent_completed %}
+                        <li class="task-item task-completed">
+                            <div class="task-content">
+                                <a href="{{ url_for('tasks.detail', task_id=task.id) }}" class="task-title">{{ task.title }}</a>
+                                <div class="task-meta">
+                                    <span class="task-quality quality-{{ task.completion_quality }}">
+                                        {{ '✅ On Time' if task.completion_quality == 'on_time' else '⏰ Late' }}
+                                    </span>
+                                </div>
+                            </div>
+                        </li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <p class="empty-state">💪 No completed tasks yet.</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

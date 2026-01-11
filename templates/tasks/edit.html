@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Task{% endblock %}
+
+{% block content %}
+<div class="form-page">
+    <div class="form-container">
+        <a href="{{ url_for('tasks.detail', task_id=task.id) }}" class="breadcrumb">← Back to Task</a>
+        <h2>Edit Task</h2>
+        
+        <form method="POST" class="task-form">
+            {{ form.hidden_tag() }}
+            
+            <div class="form-group">
+                {{ form.title.label(class="form-label") }}
+                {{ form.title(class="form-input", placeholder="e.g., Write project proposal") }}
+                {% if form.title.errors %}
+                    <span class="form-error">{{ form.title.errors[0] }}</span>
+                {% endif %}
+            </div>
+            
+            <div class="form-group">
+                {{ form.description.label(class="form-label") }}
+                {{ form.description(class="form-textarea", rows="4", placeholder="Optional: Add more details about this task") }}
+                {% if form.description.errors %}
+                    <span class="form-error">{{ form.description.errors[0] }}</span>
+                {% endif %}
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    {{ form.window_type.label(class="form-label") }}
+                    {{ form.window_type(class="form-select", onchange="toggleCustomDays()") }}
+                    {% if form.window_type.errors %}
+                        <span class="form-error">{{ form.window_type.errors[0] }}</span>
+                    {% endif %}
+                </div>
+                
+                <div class="form-group" id="custom-days-group" style="display:{% if task.window_type == 'custom' %}block{% else %}none{% endif %};">
+                    {{ form.window_value.label(class="form-label") }}
+                    {{ form.window_value(class="form-input", placeholder="e.g., 3") }}
+                    {% if form.window_value.errors %}
+                        <span class="form-error">{{ form.window_value.errors[0] }}</span>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    {{ form.priority.label(class="form-label") }}
+                    {{ form.priority(class="form-select") }}
+                </div>
+                
+                <div class="form-group">
+                    {{ form.tags.label(class="form-label") }}
+                    {{ form.tags(class="form-input", placeholder="e.g., work, urgent, review") }}
+                </div>
+            </div>
+            
+            <div class="form-actions">
+                {{ form.submit(class="btn btn-primary") }}
+                <a href="{{ url_for('tasks.detail', task_id=task.id) }}" class="btn btn-secondary">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function toggleCustomDays() {
+    const windowType = document.querySelector('select[name="window_type"]').value;
+    const customDaysGroup = document.getElementById('custom-days-group');
+    if (windowType === 'custom') {
+        customDaysGroup.style.display = 'block';
+    } else {
+        customDaysGroup.style.display = 'none';
+    }
+}
+
+// Initialize on page load
+document.addEventListener('DOMContentLoaded', toggleCustomDays);
+</script>
+{% endblock %}

@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+
+{% block title %}Tasks{% endblock %}
+
+{% block content %}
+<div class="tasks-page">
+    <div class="page-header">
+        <h2>All Tasks</h2>
+        <a href="{{ url_for('tasks.create') }}" class="btn btn-primary">+ New Task</a>
+    </div>
+    
+    <!-- Filter Tabs -->
+    <div class="filter-tabs">
+        <a href="{{ url_for('tasks.list_tasks', status='active') }}" 
+           class="filter-tab {% if status_filter == 'active' %}active{% endif %}">
+            Active
+        </a>
+        <a href="{{ url_for('tasks.list_tasks', status='at_risk') }}" 
+           class="filter-tab {% if status_filter == 'at_risk' %}active{% endif %}">
+            At Risk
+        </a>
+        <a href="{{ url_for('tasks.list_tasks', status='overdue') }}" 
+           class="filter-tab {% if status_filter == 'overdue' %}active{% endif %}">
+            Overdue
+        </a>
+        <a href="{{ url_for('tasks.list_tasks', status='completed') }}" 
+           class="filter-tab {% if status_filter == 'completed' %}active{% endif %}">
+            Completed
+        </a>
+        <a href="{{ url_for('tasks.list_tasks', status='all') }}" 
+           class="filter-tab {% if status_filter == 'all' %}active{% endif %}">
+            All
+        </a>
+    </div>
+    
+    <!-- Tasks List -->
+    {% if tasks %}
+        <div class="tasks-container">
+            {% for task in tasks %}
+                <div class="task-card" data-task-id="{{ task.id }}">
+                    <div class="task-card-header">
+                        <a href="{{ url_for('tasks.detail', task_id=task.id) }}" class="task-card-title">
+                            {{ task.title }}
+                        </a>
+                        <span class="task-priority priority-{{ task.priority }}">{{ task.priority }}</span>
+                    </div>
+                    
+                    {% if task.description %}
+                        <p class="task-card-description">{{ task.description[:100] }}{% if task.description|length > 100 %}...{% endif %}</p>
+                    {% endif %}
+                    
+                    <div class="task-card-footer">
+                        <div class="task-card-meta">
+                            <span class="task-status status-{{ task.status }}">{{ task.status|replace('_', ' ')|title }}</span>
+                            <span class="task-window">{{ task.window_type|title }} window</span>
+                            <span class="task-time">{{ task.time_remaining() }}</span>
+                        </div>
+                        
+                        <div class="task-card-actions">
+                            {% if not task.is_completed() %}
+                                <button class="btn-icon btn-complete" onclick="completeTask({{ task.id }})" title="Complete">✓</button>
+                            {% else %}
+                                <button class="btn-icon btn-uncomplete" onclick="uncompleteTask({{ task.id }})" title="Reopen">↩</button>
+                            {% endif %}
+                            <a href="{{ url_for('tasks.edit', task_id=task.id) }}" class="btn-icon" title="Edit">✎</a>
+                        </div>
+                    </div>
+                    
+                    {% if task.get_tags_list() %}
+                        <div class="task-tags">
+                            {% for tag in task.get_tags_list() %}
+                                <span class="tag">{{ tag }}</span>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="empty-state-large">
+            <p>No tasks found.</p>
+            <a href="{{ url_for('tasks.create') }}" class="btn btn-primary">Create your first task</a>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

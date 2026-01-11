@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+
+{% block title %}Monthly Progress{% endblock %}
+
+{% block content %}
+<div class="progress-page">
+    <div class="page-header">
+        <h2>Monthly Progress</h2>
+        <p class="page-subtitle">{{ month }}</p>
+    </div>
+    
+    <div class="stats-card">
+        <h3>Month Summary</h3>
+        <div class="stats-row">
+            <div class="stat-item">
+                <span class="stat-label">Total Tasks</span>
+                <span class="stat-value">{{ stats.total }}</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Completed</span>
+                <span class="stat-value">{{ stats.completed }}</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">On Time</span>
+                <span class="stat-value">{{ stats.on_time }}</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Late</span>
+                <span class="stat-value">{{ stats.late }}</span>
+            </div>
+        </div>
+        <div class="progress-bar-large">
+            <div class="progress-fill" style="width: {{ stats.completion_rate }}%"></div>
+            <span class="progress-text">{{ stats.completion_rate }}% Complete</span>
+        </div>
+    </div>
+    
+    <div class="chart-section">
+        <h3>30-Day Trend</h3>
+        <canvas id="monthlyChart" width="400" height="150"></canvas>
+    </div>
+    
+    {% if tasks %}
+    <div class="tasks-section">
+        <h3>This Month's Tasks</h3>
+        <div class="tasks-container">
+            {% for task in tasks[:20] %}
+                <div class="task-card" data-task-id="{{ task.id }}">
+                    <div class="task-card-header">
+                        <a href="{{ url_for('tasks.detail', task_id=task.id) }}" class="task-card-title">
+                            {{ task.title }}
+                        </a>
+                    </div>
+                    <div class="task-card-footer">
+                        <div class="task-card-meta">
+                            <span class="task-status status-{{ task.status }}">{{ task.status|replace('_', ' ')|title }}</span>
+                            <span class="task-time">{{ task.deadline.strftime('%b %d') }}</span>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+        {% if tasks|length > 20 %}
+            <p class="text-center">...and {{ tasks|length - 20 }} more tasks</p>
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+const trendData = {{ trend_data|tojson }};
+const ctx = document.getElementById('monthlyChart').getContext('2d');
+new Chart(ctx, {
+    type: 'bar',
+    data: {
+        labels: trendData.map((d, i) => i % 3 === 0 ? d.date : ''),
+        datasets: [{
+            label: 'Completed',
+            data: trendData.map(d => d.completed),
+            backgroundColor: 'rgba(76, 175, 80, 0.8)',
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: true,
+        plugins: {
+            legend: { display: false }
+        },
+        scales: {
+            y: { beginAtZero: true, ticks: { stepSize: 1 } }
+        }
+    }
+});
+</script>
+{% endblock %}

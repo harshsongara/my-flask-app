@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+
+{% block title %}Weekly Progress{% endblock %}
+
+{% block content %}
+<div class="progress-page">
+    <div class="page-header">
+        <h2>Weekly Progress</h2>
+        <p class="page-subtitle">{{ start_date.strftime('%B %d') }} - {{ end_date.strftime('%B %d, %Y') }}</p>
+    </div>
+    
+    <div class="stats-card">
+        <h3>Week Summary</h3>
+        <div class="stats-row">
+            <div class="stat-item">
+                <span class="stat-label">Total Tasks</span>
+                <span class="stat-value">{{ stats.total }}</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Completed</span>
+                <span class="stat-value">{{ stats.completed }}</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">On Time</span>
+                <span class="stat-value">{{ stats.on_time }}</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Completion Rate</span>
+                <span class="stat-value">{{ stats.completion_rate }}%</span>
+            </div>
+        </div>
+        <div class="progress-bar-large">
+            <div class="progress-fill" style="width: {{ stats.completion_rate }}%"></div>
+        </div>
+    </div>
+    
+    <div class="chart-section">
+        <h3>Daily Activity</h3>
+        <canvas id="weeklyChart" width="400" height="150"></canvas>
+    </div>
+    
+    {% if tasks %}
+    <div class="tasks-section">
+        <h3>This Week's Tasks</h3>
+        <div class="tasks-container">
+            {% for task in tasks %}
+                <div class="task-card" data-task-id="{{ task.id }}">
+                    <div class="task-card-header">
+                        <a href="{{ url_for('tasks.detail', task_id=task.id) }}" class="task-card-title">
+                            {{ task.title }}
+                        </a>
+                    </div>
+                    <div class="task-card-footer">
+                        <div class="task-card-meta">
+                            <span class="task-status status-{{ task.status }}">{{ task.status|replace('_', ' ')|title }}</span>
+                            <span class="task-time">{{ task.time_remaining() }}</span>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+const trendData = {{ trend_data|tojson }};
+const ctx = document.getElementById('weeklyChart').getContext('2d');
+new Chart(ctx, {
+    type: 'line',
+    data: {
+        labels: trendData.map(d => d.date),
+        datasets: [{
+            label: 'Created',
+            data: trendData.map(d => d.created),
+            borderColor: '#2196F3',
+            backgroundColor: 'rgba(33, 150, 243, 0.1)',
+            tension: 0.3
+        }, {
+            label: 'Completed',
+            data: trendData.map(d => d.completed),
+            borderColor: '#4CAF50',
+            backgroundColor: 'rgba(76, 175, 80, 0.1)',
+            tension: 0.3
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: true,
+        plugins: {
+            legend: { display: true, position: 'top' }
+        },
+        scales: {
+            y: { beginAtZero: true, ticks: { stepSize: 1 } }
+        }
+    }
+});
+</script>
+{% endblock %}
