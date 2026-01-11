@@ -5,7 +5,7 @@ Flask-Login==0.6.3
 Flask-WTF==1.2.1
 
 # Database
-SQLAlchemy==2.0.23
+SQLAlchemy==2.0.36
 alembic==1.13.1
 
 # Security
