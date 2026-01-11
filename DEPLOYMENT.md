@@ -2,10 +2,10 @@
 
 ## Files for Deployment
 
-### 1. app.py
+### 1. wsgi.py
 - **Purpose**: WSGI entry point for production servers
 - **Used by**: Gunicorn, uWSGI, and other WSGI servers
-- **Command**: `gunicorn app:app`
+- **Command**: `gunicorn wsgi:app`
 
 ### 2. run.py
 - **Purpose**: Development server entry point
@@ -21,7 +21,7 @@
 2. **Create New Web Service on Render:**
    - Connect your GitHub repo
    - **Build Command**: `pip install -r requirements.txt`
-   - **Start Command**: `gunicorn app:app`
+   - **Start Command**: `gunicorn wsgi:app`
    - **Environment**: Python 3
 
 3. **Set Environment Variables** in Render dashboard:
@@ -73,17 +73,17 @@ DATABASE_URL=postgresql://user:pass@host:5432/dbname
 
 ## Local vs Production
 
-| Feature | Local (run.py) | Production (app.py) |
+| Feature | Local (run.py) | Production (wsgi.py) |
 |---------|----------------|---------------------|
 | Debug | ON | OFF |
 | Server | Flask dev server | Gunicorn |
 | Database | SQLite | PostgreSQL |
-| Command | `python run.py` | `gunicorn app:app` |
+| Command | `python run.py` | `gunicorn wsgi:app` |
 | Port | 5000 | Dynamic (set by platform) |
 
 ## Important Notes
 
-- ✅ `app.py` created - ready for deployment
+- ✅ `wsgi.py` created - ready for deployment
 - ✅ `Procfile` created - tells Render/Heroku how to run
 - ✅ `gunicorn` added to requirements.txt
 - ✅ Database and secrets excluded from Git
