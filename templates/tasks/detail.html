@@ -7,7 +7,12 @@
     <div class="detail-header">
         <div>
             <a href="{{ url_for('tasks.list_tasks') }}" class="breadcrumb">← Back to Tasks</a>
-            <h2>{{ task.title }}</h2>
+            <h2>
+                {{ task.title }}
+                {% if task.is_recurring %}
+                    <span class="recurring-badge">🔁 Repeats {{ task.recurrence_pattern|title }}</span>
+                {% endif %}
+            </h2>
         </div>
         <div class="detail-actions">
             {% if not task.is_completed() %}

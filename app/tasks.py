@@ -1,7 +1,7 @@
 from flask import Blueprint, render_template, redirect, url_for, flash, request, jsonify
 from flask_login import login_required, current_user
 from flask_wtf import FlaskForm
-from wtforms import StringField, TextAreaField, SelectField, IntegerField, SubmitField
+from wtforms import StringField, TextAreaField, SelectField, IntegerField, SubmitField, BooleanField
 from wtforms.validators import DataRequired, Optional, NumberRange, Length
 from app import db
 from app.models import Task
@@ -40,6 +40,24 @@ class TaskForm(FlaskForm):
         default='medium'
     )
     tags = StringField('Tags (comma-separated)', validators=[Optional()])
+    
+    # Recurring task fields
+    is_recurring = BooleanField('Repeat this task')
+    recurrence_pattern = SelectField('Repeat',
+        choices=[
+            ('', 'Does not repeat'),
+            ('daily', 'Daily'),
+            ('weekly', 'Weekly'),
+            ('monthly', 'Monthly')
+        ],
+        default='',
+        validators=[Optional()]
+    )
+    recurrence_interval = IntegerField('Every', 
+        validators=[Optional(), NumberRange(min=1, max=365)],
+        default=1
+    )
+    
     submit = SubmitField('Create Task')
 
 
@@ -96,7 +114,10 @@ def create():
             deadline=deadline,
             priority=form.priority.data,
             tags=form.tags.data,
-            status='active'
+            status='active',
+            is_recurring=form.is_recurring.data and bool(form.recurrence_pattern.data),
+            recurrence_pattern=form.recurrence_pattern.data if form.is_recurring.data else None,
+            recurrence_interval=form.recurrence_interval.data if form.is_recurring.data else 1
         )
         
         db.session.add(task)
@@ -188,13 +209,26 @@ def complete(task_id):
     else:
         task.completion_quality = 'late'
     
+    # Create next recurrence if this is a recurring task
+    next_task = None
+    if task.is_recurring:
+        next_task = task.create_next_recurrence()
+        if next_task:
+            db.session.add(next_task)
+    
     db.session.commit()
     
-    return jsonify({
+    response_data = {
         'success': True,
         'message': f'Task "{task.title}" completed!',
         'completion_quality': task.completion_quality
-    })
+    }
+    
+    if next_task:
+        response_data['recurring'] = True
+        response_data['next_deadline'] = next_task.deadline.strftime('%Y-%m-%d %H:%M')
+    
+    return jsonify(response_data)
 
 
 @tasks_bp.route('/<int:task_id>/uncomplete', methods=['POST'])

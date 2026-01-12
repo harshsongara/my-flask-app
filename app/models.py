@@ -54,6 +54,12 @@ class Task(db.Model):
     tags = db.Column(db.String(500))  # Comma-separated tags
     completion_quality = db.Column(db.String(20))  # 'on_time', 'late'
     
+    # Recurring task fields
+    is_recurring = db.Column(db.Boolean, default=False)
+    recurrence_pattern = db.Column(db.String(20))  # 'daily', 'weekly', 'monthly', 'custom'
+    recurrence_interval = db.Column(db.Integer, default=1)  # Every X days/weeks/months
+    parent_task_id = db.Column(db.Integer, db.ForeignKey('tasks.id'))  # For tracking recurring instances
+    
     def is_completed(self):
         """Check if task is completed."""
         return self.completed_at is not None
@@ -104,6 +110,40 @@ class Task(db.Model):
         if not self.tags:
             return []
         return [tag.strip() for tag in self.tags.split(',') if tag.strip()]
+    
+    def create_next_recurrence(self):
+        """Create the next recurring instance when this task is completed."""
+        if not self.is_recurring:
+            return None
+        
+        # Calculate next deadline based on pattern
+        if self.recurrence_pattern == 'daily':
+            next_deadline = self.deadline + timedelta(days=self.recurrence_interval)
+        elif self.recurrence_pattern == 'weekly':
+            next_deadline = self.deadline + timedelta(weeks=self.recurrence_interval)
+        elif self.recurrence_pattern == 'monthly':
+            # Approximate month as 30 days
+            next_deadline = self.deadline + timedelta(days=30 * self.recurrence_interval)
+        else:
+            return None
+        
+        # Create new task instance
+        new_task = Task(
+            user_id=self.user_id,
+            title=self.title,
+            description=self.description,
+            window_type=self.window_type,
+            window_value=self.window_value,
+            deadline=next_deadline,
+            priority=self.priority,
+            tags=self.tags,
+            is_recurring=True,
+            recurrence_pattern=self.recurrence_pattern,
+            recurrence_interval=self.recurrence_interval,
+            parent_task_id=self.parent_task_id or self.id
+        )
+        
+        return new_task
     
     def __repr__(self):
         return f'<Task {self.title}>'

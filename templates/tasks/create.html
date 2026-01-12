@@ -55,6 +55,29 @@
                     {{ form.tags.label(class="form-label") }}
                     {{ form.tags(class="form-input", placeholder="e.g., work, urgent, review") }}
                 </div>
+                
+                <!-- Recurring Task Section -->
+                <div class="form-group recurring-section">
+                    <label class="form-label">🔁 Recurring Task</label>
+                    <div class="recurring-checkbox">
+                        {{ form.is_recurring(id="recurring-checkbox") }}
+                        <label for="recurring-checkbox">Repeat this task</label>
+                    </div>
+                    
+                    <div id="recurring-options" style="display: none; margin-top: 15px;">
+                        <div class="form-row">
+                            <div class="form-group" style="flex: 2;">
+                                {{ form.recurrence_pattern.label(class="form-label") }}
+                                {{ form.recurrence_pattern(class="form-select") }}
+                            </div>
+                            <div class="form-group" style="flex: 1;">
+                                {{ form.recurrence_interval.label(class="form-label") }}
+                                {{ form.recurrence_interval(class="form-input", placeholder="1") }}
+                            </div>
+                        </div>
+                        <p class="form-hint" id="recurrence-hint"></p>
+                    </div>
+                </div>
             </div>
             
             <div class="form-actions">
@@ -149,5 +172,49 @@ function toggleCustomDays() {
 
 // Initialize on page load
 document.addEventListener('DOMContentLoaded', toggleCustomDays);
+
+// Recurring task toggle
+const recurringCheckbox = document.getElementById('recurring-checkbox');
+const recurringOptions = document.getElementById('recurring-options');
+const recurrencePattern = document.getElementById('recurrence_pattern');
+const recurrenceInterval = document.getElementById('recurrence_interval');
+const recurrenceHint = document.getElementById('recurrence-hint');
+
+if (recurringCheckbox) {
+    recurringCheckbox.addEventListener('change', function() {
+        recurringOptions.style.display = this.checked ? 'block' : 'none';
+        if (!this.checked) {
+            recurrencePattern.value = '';
+        }
+    });
+}
+
+function updateRecurrenceHint() {
+    const pattern = recurrencePattern.value;
+    const interval = recurrenceInterval.value || 1;
+    
+    if (!pattern || pattern === '') {
+        recurrenceHint.textContent = '';
+        return;
+    }
+    
+    let hint = 'This task will repeat ';
+    if (pattern === 'daily') {
+        hint += interval == 1 ? 'every day' : `every ${interval} days`;
+    } else if (pattern === 'weekly') {
+        hint += interval == 1 ? 'every week' : `every ${interval} weeks`;
+    } else if (pattern === 'monthly') {
+        hint += interval == 1 ? 'every month' : `every ${interval} months`;
+    }
+    hint += ' after completion';
+    
+    recurrenceHint.textContent = hint;
+}
+
+if (recurrencePattern) {
+    recurrencePattern.addEventListener('change', updateRecurrenceHint);
+    recurrenceInterval.addEventListener('input', updateRecurrenceHint);
+}
+
 </script>
 {% endblock %}
