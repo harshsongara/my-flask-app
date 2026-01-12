@@ -21,14 +21,25 @@ class Config:
     # SQLite URI format: sqlite:///absolute/path/to/db.db
     SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or f'sqlite:///{_db_path}'
     
-    # SQLAlchemy engine options for SQLite
-    SQLALCHEMY_ENGINE_OPTIONS = {
-        'connect_args': {
-            'check_same_thread': False,
-            'timeout': 30
-        },
-        'pool_pre_ping': True,
-    }
+    # SQLAlchemy engine options - conditional based on database type
+    @property
+    def SQLALCHEMY_ENGINE_OPTIONS(self):
+        db_uri = os.environ.get('DATABASE_URL') or f'sqlite:///{self._db_path}'
+        if db_uri.startswith('sqlite'):
+            # SQLite-specific options
+            return {
+                'connect_args': {
+                    'check_same_thread': False,
+                    'timeout': 30
+                },
+                'pool_pre_ping': True,
+            }
+        else:
+            # PostgreSQL options
+            return {
+                'pool_pre_ping': True,
+                'pool_recycle': 300,
+            }
     
     # Session configuration
     PERMANENT_SESSION_LIFETIME = timedelta(days=30)
