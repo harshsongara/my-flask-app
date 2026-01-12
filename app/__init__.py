@@ -29,7 +29,9 @@ def create_app(config_name=None):
     os.makedirs(instance_path, exist_ok=True)
     
     # Log database path for debugging
+    print(f"Config name: {config_name}")
     print(f"Database URI: {app.config['SQLALCHEMY_DATABASE_URI']}")
+    print(f"Engine options: {app.config.get('SQLALCHEMY_ENGINE_OPTIONS', {})}")
     print(f"Instance path: {instance_path}")
     
     # Initialize extensions
