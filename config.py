@@ -60,6 +60,12 @@ class ProductionConfig(Config):
     DEBUG = False
     TESTING = False
     SESSION_COOKIE_SECURE = True  # Require HTTPS
+    
+    # PostgreSQL-specific engine options (no check_same_thread)
+    SQLALCHEMY_ENGINE_OPTIONS = {
+        'pool_pre_ping': True,
+        'pool_recycle': 300,
+    }
 
 
 class TestingConfig(Config):
