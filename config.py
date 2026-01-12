@@ -21,12 +21,6 @@ class Config:
     # SQLite URI format: sqlite:///absolute/path/to/db.db
     SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or f'sqlite:///{_db_path}'
     
-    # SQLAlchemy engine options - works with both SQLite and PostgreSQL
-    # Only set pool_pre_ping (works for both), skip SQLite-specific options
-    SQLALCHEMY_ENGINE_OPTIONS = {
-        'pool_pre_ping': True,
-    }
-    
     # Session configuration
     PERMANENT_SESSION_LIFETIME = timedelta(days=30)
     SESSION_COOKIE_SECURE = False  # Set True in production with HTTPS
@@ -44,15 +38,6 @@ class DevelopmentConfig(Config):
     """Development configuration."""
     DEBUG = True
     TESTING = False
-    
-    # SQLite-specific engine options for local development
-    SQLALCHEMY_ENGINE_OPTIONS = {
-        'connect_args': {
-            'check_same_thread': False,
-            'timeout': 30
-        },
-        'pool_pre_ping': True,
-    }
 
 
 class ProductionConfig(Config):
@@ -60,12 +45,6 @@ class ProductionConfig(Config):
     DEBUG = False
     TESTING = False
     SESSION_COOKIE_SECURE = True  # Require HTTPS
-    
-    # PostgreSQL-specific engine options (no check_same_thread)
-    SQLALCHEMY_ENGINE_OPTIONS = {
-        'pool_pre_ping': True,
-        'pool_recycle': 300,
-    }
 
 
 class TestingConfig(Config):
