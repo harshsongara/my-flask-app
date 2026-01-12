@@ -21,6 +21,35 @@ with app.app_context():
     try:
         db.create_all()
         print("Database tables initialized successfully!")
+        
+        # Add missing columns for recurring tasks (PostgreSQL migration)
+        from sqlalchemy import text, inspect
+        inspector = inspect(db.engine)
+        
+        # Check if tasks table exists
+        if 'tasks' in inspector.get_table_names():
+            columns = [col['name'] for col in inspector.get_columns('tasks')]
+            
+            migrations = []
+            if 'is_recurring' not in columns:
+                migrations.append("ALTER TABLE tasks ADD COLUMN is_recurring BOOLEAN DEFAULT false")
+            if 'recurrence_pattern' not in columns:
+                migrations.append("ALTER TABLE tasks ADD COLUMN recurrence_pattern VARCHAR(20)")
+            if 'recurrence_interval' not in columns:
+                migrations.append("ALTER TABLE tasks ADD COLUMN recurrence_interval INTEGER DEFAULT 1")
+            if 'parent_task_id' not in columns:
+                migrations.append("ALTER TABLE tasks ADD COLUMN parent_task_id INTEGER")
+            
+            if migrations:
+                print(f"Running {len(migrations)} column migrations...")
+                for sql in migrations:
+                    print(f"  - {sql}")
+                    db.session.execute(text(sql))
+                db.session.commit()
+                print("✅ Column migrations completed!")
+            else:
+                print("✅ All columns already exist")
+                
     except Exception as e:
         print(f"Error creating database tables: {e}")
         raise
