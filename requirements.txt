@@ -7,7 +7,7 @@ Flask-WTF==1.2.1
 # Database
 SQLAlchemy==2.0.36
 alembic==1.13.1
-psycopg2-binary==2.9.9
+psycopg2-binary==2.9.10
 
 # Security
 Werkzeug==3.0.1
