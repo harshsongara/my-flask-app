@@ -17,8 +17,19 @@ class User(UserMixin, db.Model):
     last_login = db.Column(db.DateTime)
     timezone = db.Column(db.String(50), default='UTC')
     
+    # Gamification fields
+    current_streak = db.Column(db.Integer, default=0)
+    longest_streak = db.Column(db.Integer, default=0)
+    last_activity_date = db.Column(db.Date)
+    daily_goal = db.Column(db.Integer, default=3)  # Default: 3 tasks per day
+    total_tasks_completed = db.Column(db.Integer, default=0)
+    streak_freeze_count = db.Column(db.Integer, default=2)  # Streak protection uses
+    notification_enabled = db.Column(db.Boolean, default=True)
+    reminder_time = db.Column(db.Time, default=lambda: datetime.strptime('18:00', '%H:%M').time())
+    
     # Relationships
     tasks = db.relationship('Task', backref='user', lazy='dynamic', cascade='all, delete-orphan')
+    achievements = db.relationship('UserAchievement', backref='user', lazy='dynamic', cascade='all, delete-orphan')
     
     def set_password(self, password):
         """Hash and set password."""
@@ -31,6 +42,56 @@ class User(UserMixin, db.Model):
     def get_timezone(self):
         """Get user's timezone object."""
         return pytz.timezone(self.timezone)
+    
+    def update_streak(self, task_completed_today=True):
+        """Update user's daily streak based on task completion."""
+        today = datetime.utcnow().date()
+        
+        if self.last_activity_date == today:
+            return  # Already updated today
+        
+        yesterday = today - timedelta(days=1)
+        
+        if task_completed_today:
+            # User completed task(s) today
+            if self.last_activity_date == yesterday:
+                # Continuing streak
+                self.current_streak += 1
+            else:
+                # Starting new streak
+                self.current_streak = 1
+            
+            self.last_activity_date = today
+            
+            # Update longest streak
+            if self.current_streak > self.longest_streak:
+                self.longest_streak = self.current_streak
+        else:
+            # No tasks completed - check if streak should be broken
+            if self.last_activity_date and self.last_activity_date < yesterday:
+                # More than 1 day gap - break streak unless using streak freeze
+                if self.streak_freeze_count > 0:
+                    self.streak_freeze_count -= 1
+                    # Don't break streak, but don't extend either
+                else:
+                    self.current_streak = 0
+    
+    def get_today_progress(self):
+        """Get today's task completion progress."""
+        today = datetime.utcnow().date()
+        start = datetime.combine(today, datetime.min.time())
+        end = datetime.combine(today, datetime.max.time())
+        
+        completed_today = self.tasks.filter(
+            Task.completed_at >= start,
+            Task.completed_at <= end
+        ).count()
+        
+        return {
+            'completed': completed_today,
+            'goal': self.daily_goal,
+            'percentage': min(100, (completed_today / self.daily_goal) * 100) if self.daily_goal > 0 else 0
+        }
     
     def __repr__(self):
         return f'<User {self.username}>'
@@ -147,3 +208,36 @@ class Task(db.Model):
     
     def __repr__(self):
         return f'<Task {self.title}>'
+
+
+class Achievement(db.Model):
+    """Achievement/Badge definitions."""
+    __tablename__ = 'achievements'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False)
+    description = db.Column(db.String(255), nullable=False)
+    icon = db.Column(db.String(10), default='🏆')  # Emoji icon
+    category = db.Column(db.String(50), default='general')  # streak, completion, milestone
+    requirement_type = db.Column(db.String(50), nullable=False)  # streak, tasks_completed, etc.
+    requirement_value = db.Column(db.Integer, nullable=False)
+    points = db.Column(db.Integer, default=10)
+    
+    def __repr__(self):
+        return f'<Achievement {self.name}>'
+
+
+class UserAchievement(db.Model):
+    """User's earned achievements."""
+    __tablename__ = 'user_achievements'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    achievement_id = db.Column(db.Integer, db.ForeignKey('achievements.id'), nullable=False)
+    earned_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    # Relationship
+    achievement = db.relationship('Achievement', backref='user_achievements')
+    
+    def __repr__(self):
+        return f'<UserAchievement {self.user_id}:{self.achievement_id}>'

@@ -216,17 +216,33 @@ def complete(task_id):
         if next_task:
             db.session.add(next_task)
     
+    # Update user stats and streak
+    current_user.total_tasks_completed += 1
+    current_user.update_streak(task_completed_today=True)
+    
+    # Check for new achievements
+    from app.utils import check_achievements
+    new_achievements = check_achievements(current_user)
+    
     db.session.commit()
     
     response_data = {
         'success': True,
         'message': f'Task "{task.title}" completed!',
-        'completion_quality': task.completion_quality
+        'completion_quality': task.completion_quality,
+        'streak': current_user.current_streak,
+        'progress': current_user.get_today_progress()
     }
     
     if next_task:
         response_data['recurring'] = True
         response_data['next_deadline'] = next_task.deadline.strftime('%Y-%m-%d %H:%M')
+    
+    if new_achievements:
+        response_data['achievements'] = [
+            {'name': ach.name, 'icon': ach.icon, 'description': ach.description}
+            for ach in new_achievements
+        ]
     
     return jsonify(response_data)
 

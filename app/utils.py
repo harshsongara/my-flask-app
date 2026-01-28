@@ -1,7 +1,79 @@
 from datetime import datetime, timedelta, time
-from app.models import Task
+from app.models import Task, Achievement, UserAchievement
 from sqlalchemy import func
 import pytz
+
+
+def check_achievements(user):
+    """Check and award new achievements for user."""
+    from app import db
+    
+    new_achievements = []
+    
+    # Get all achievements user hasn't earned yet
+    earned_achievement_ids = [ua.achievement_id for ua in user.achievements]
+    available_achievements = Achievement.query.filter(
+        ~Achievement.id.in_(earned_achievement_ids)
+    ).all()
+    
+    for achievement in available_achievements:
+        earned = False
+        
+        if achievement.requirement_type == 'streak':
+            earned = user.current_streak >= achievement.requirement_value
+        elif achievement.requirement_type == 'total_tasks':
+            earned = user.total_tasks_completed >= achievement.requirement_value
+        elif achievement.requirement_type == 'daily_goal':
+            progress = user.get_today_progress()
+            earned = progress['completed'] >= achievement.requirement_value
+        elif achievement.requirement_type == 'longest_streak':
+            earned = user.longest_streak >= achievement.requirement_value
+        
+        if earned:
+            # Award achievement
+            user_achievement = UserAchievement(
+                user_id=user.id,
+                achievement_id=achievement.id
+            )
+            db.session.add(user_achievement)
+            new_achievements.append(achievement)
+    
+    return new_achievements
+
+
+def create_default_achievements():
+    """Create default achievement set."""
+    from app import db
+    
+    default_achievements = [
+        # Streak achievements
+        {'name': 'Getting Started', 'description': 'Complete your first task', 'icon': '🎯', 'category': 'milestone', 'requirement_type': 'total_tasks', 'requirement_value': 1, 'points': 5},
+        {'name': 'Day 1', 'description': 'Start your first streak', 'icon': '🔥', 'category': 'streak', 'requirement_type': 'streak', 'requirement_value': 1, 'points': 10},
+        {'name': 'Hot Streak', 'description': '3 days in a row!', 'icon': '🔥', 'category': 'streak', 'requirement_type': 'streak', 'requirement_value': 3, 'points': 25},
+        {'name': 'On Fire', 'description': '7 days in a row!', 'icon': '🚀', 'category': 'streak', 'requirement_type': 'streak', 'requirement_value': 7, 'points': 50},
+        {'name': 'Unstoppable', 'description': '30 days in a row!', 'icon': '⚡', 'category': 'streak', 'requirement_type': 'streak', 'requirement_value': 30, 'points': 200},
+        {'name': 'Legend', 'description': '100 days in a row!', 'icon': '👑', 'category': 'streak', 'requirement_type': 'streak', 'requirement_value': 100, 'points': 500},
+        
+        # Task completion achievements
+        {'name': 'Productive', 'description': 'Complete 10 tasks', 'icon': '📋', 'category': 'milestone', 'requirement_type': 'total_tasks', 'requirement_value': 10, 'points': 20},
+        {'name': 'Task Master', 'description': 'Complete 50 tasks', 'icon': '🏆', 'category': 'milestone', 'requirement_type': 'total_tasks', 'requirement_value': 50, 'points': 100},
+        {'name': 'Achiever', 'description': 'Complete 100 tasks', 'icon': '🎖️', 'category': 'milestone', 'requirement_type': 'total_tasks', 'requirement_value': 100, 'points': 250},
+        {'name': 'Champion', 'description': 'Complete 500 tasks', 'icon': '🥇', 'category': 'milestone', 'requirement_type': 'total_tasks', 'requirement_value': 500, 'points': 1000},
+        
+        # Daily goal achievements
+        {'name': 'Goal Crusher', 'description': 'Reach your daily goal', 'icon': '🎯', 'category': 'daily', 'requirement_type': 'daily_goal', 'requirement_value': 3, 'points': 15},
+        {'name': 'Overachiever', 'description': 'Complete 5 tasks in one day', 'icon': '⭐', 'category': 'daily', 'requirement_type': 'daily_goal', 'requirement_value': 5, 'points': 30},
+        {'name': 'Productivity Beast', 'description': 'Complete 10 tasks in one day', 'icon': '🦾', 'category': 'daily', 'requirement_type': 'daily_goal', 'requirement_value': 10, 'points': 50},
+    ]
+    
+    for ach_data in default_achievements:
+        # Check if achievement already exists
+        existing = Achievement.query.filter_by(name=ach_data['name']).first()
+        if not existing:
+            achievement = Achievement(**ach_data)
+            db.session.add(achievement)
+    
+    db.session.commit()
 
 
 def calculate_deadline(created_at, window_type, custom_days=None, timezone='UTC'):

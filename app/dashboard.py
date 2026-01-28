@@ -21,10 +21,19 @@ def home():
     # Refresh task statuses
     refresh_user_task_statuses(db.session, current_user.id)
     
+    # Update user streak (check daily)
+    current_user.update_streak(task_completed_today=False)  # Will be updated to True when tasks completed
+    
     # Get statistics
     today_stats = get_daily_stats(db.session, current_user.id)
     week_stats = get_weekly_stats(db.session, current_user.id)
     month_stats = get_monthly_stats(db.session, current_user.id)
+    
+    # Get gamification data
+    progress = current_user.get_today_progress()
+    recent_achievements = current_user.achievements.order_by(
+        db.desc('earned_at')
+    ).limit(3).all()
     
     # Get task counts by status
     active_count = Task.query.filter_by(
@@ -63,7 +72,14 @@ def home():
                          at_risk_count=at_risk_count,
                          overdue_count=overdue_count,
                          upcoming_tasks=upcoming_tasks,
-                         recent_completed=recent_completed)
+                         recent_completed=recent_completed,
+                         # Gamification data
+                         streak=current_user.current_streak,
+                         longest_streak=current_user.longest_streak,
+                         progress=progress,
+                         recent_achievements=recent_achievements,
+                         total_tasks=current_user.total_tasks_completed,
+                         streak_freeze_count=current_user.streak_freeze_count)
 
 
 @dashboard_bp.route('/daily')

@@ -12,6 +12,51 @@
         </a>
     </div>
     
+    <!-- Gamification Section -->
+    <div class="gamification-section">
+        <div class="streak-card">
+            <div class="streak-icon">🔥</div>
+            <div class="streak-content">
+                <h3>{{ streak }} Day Streak</h3>
+                <p>Personal best: {{ longest_streak }} days</p>
+                {% if streak_freeze_count > 0 %}
+                    <div class="streak-freeze">
+                        <span class="freeze-icon">🛡️</span>
+                        <span>{{ streak_freeze_count }} freeze{{ 's' if streak_freeze_count != 1 else '' }} left</span>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <div class="progress-card">
+            <div class="progress-content">
+                <h3>Today's Goal</h3>
+                <div class="progress-bar">
+                    <div class="progress-fill" style="width: {{ progress.percentage }}%"></div>
+                </div>
+                <p>{{ progress.completed }} of {{ progress.goal }} tasks completed</p>
+            </div>
+        </div>
+        
+        <div class="achievement-card">
+            <div class="achievement-content">
+                <h3>Recent Achievements</h3>
+                {% if recent_achievements %}
+                    <div class="achievement-list">
+                        {% for user_ach in recent_achievements %}
+                            <div class="achievement-item">
+                                <span class="ach-icon">{{ user_ach.achievement.icon }}</span>
+                                <span class="ach-name">{{ user_ach.achievement.name }}</span>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p class="no-achievements">Complete tasks to earn achievements! 🏆</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
     <!-- Task Summary -->
     <div class="task-summary">
         <div class="summary-card">
